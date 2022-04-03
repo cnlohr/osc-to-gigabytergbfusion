@@ -19,11 +19,14 @@
 
 hid_device * dev;
 
-void Update( uint32_t colorval )
+void Update( uint32_t * colorval, int all )
 {
 	uint8_t databuff[64];
 	uint8_t * dptr = databuff;
 	
+	int cvled = 0;
+	
+	// LEDs on header
 	int group = 0;
 	int led = 0;
 	for( group = 0; group < 4; group++ )
@@ -38,17 +41,19 @@ void Update( uint32_t colorval )
 		int i = 0;
 		for( i = 0; i < 19; i++ )
 		{
-			*(dptr++) = (colorval>>8)&0xff;
-			*(dptr++) = (colorval>>0)&0xff;
-			*(dptr++) = (colorval>>16)&0xff;
+			*(dptr++) = (colorval[cvled]>>8)&0xff;
+			*(dptr++) = (colorval[cvled]>>0)&0xff;
+			*(dptr++) = (colorval[cvled]>>16)&0xff;
+			if( !all ) cvled++;
 		}
 		*(dptr++) = 0;
 		*(dptr++) = 0;
 		int r = hid_send_feature_report( dev, databuff, 64 );
 	}
 
+	// Mobo LEDs
 	int mark = 0;
-	for( mark = 0; mark < 4; mark++ )
+	for( mark = 0; mark < 5; mark++ )
 	{
 		int bv = 1<<mark;
 		dptr = databuff;
@@ -68,9 +73,10 @@ void Update( uint32_t colorval )
 		
 		*(dptr++) = 0x64;
 		*(dptr++) = 0x00;
-		*(dptr++) = (colorval>>16)&0xff;
-		*(dptr++) = (colorval>>8)&0xff;
-		*(dptr++) = (colorval>>0)&0xff;
+		*(dptr++) = (colorval[cvled]>>16)&0xff;
+		*(dptr++) = (colorval[cvled]>>8)&0xff;
+		*(dptr++) = (colorval[cvled]>>0)&0xff;
+		if( !all ) cvled++;
 		*(dptr++) = 0x00;
 		*(dptr++) = 0x00;
 		*(dptr++) = 0x00;
@@ -108,12 +114,16 @@ void oscCallback( const char * address, const char * type, void ** parameters )
 		if( strcmp( type, ",r" ) == 0 )
 		{
 			uint32_t colorval = *((uint32_t*)parameters[0]);
-			Update( colorval );
+			Update( &colorval, 1 );
 		}
 		else
 		{
 			printf( "Unknown parmaeters: %s\n", type );
 		}
+	}
+	if( strcmp( address, "/opc/zall" ) == 0 )
+	{
+		Update( (uint32_t*)parameters, 0 );
 	}
 	else
 	{

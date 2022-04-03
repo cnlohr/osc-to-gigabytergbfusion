@@ -661,7 +661,6 @@ HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path)
 
 	/* Open a handle to the device */
 	dev->device_handle = open_device(path, FALSE);
-	printf( "Open Path: %s\n", path );
 
 	/* Check validity of write_handle. */
 	if (dev->device_handle == INVALID_HANDLE_VALUE) {
